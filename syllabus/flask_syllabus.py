@@ -33,8 +33,7 @@ if configuration.DEBUG:
 # it atomically in the view functions.
 #
 schedule = pre.process(open(configuration.SYLLABUS))
-
-
+curr = pre.currWeek()
 ###
 # Pages
 # Each of these transmits the default "200/OK" header
@@ -47,6 +46,7 @@ def index():
     """Main application page; most users see only this"""
     app.logger.debug("Main page entry")
     flask.g.schedule = schedule  # To be accessible in Jinja2 on page
+    flask.g.current = curr	# used to access current week number
     return flask.render_template('syllabus.html')
 
 

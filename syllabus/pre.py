@@ -9,6 +9,7 @@ logging.basicConfig(format='%(levelname)s:%(message)s',
 log = logging.getLogger(__name__)
 
 base = arrow.now()   # Default, replaced if file has 'begin: ...'
+weekBeginnings = []  # holds week beginning dates
 
 
 def process(raw):
@@ -41,7 +42,6 @@ def process(raw):
         if field == "begin":
             try:
                 base = arrow.get(content, "MM/DD/YYYY")
-                # print("Base date {}".format(base.isoformat()))
             except:
                 raise ValueError("Unable to parse date {}".format(content))
 
@@ -51,8 +51,12 @@ def process(raw):
                 entry = {}
             entry['topic'] = ""
             entry['project'] = ""
-            entry['week'] = content
-
+            entry['week'] = "Week\n" + content
+            factor = int(content) - 1	# calculates factor to multiply week start date
+            week = base.replace(days=(7*factor))    # begining of certain week
+            weekBeginnings.append( week)     #add to a list of week beginnings
+            weekBegin = base.replace(days=(7*factor)).format("MM/DD")   # format for schedule
+            entry['start'] = "Week of\n" + weekBegin    # added a new entry for schedule
         elif field == 'topic' or field == 'project':
             entry[field] = content
 
@@ -61,9 +65,22 @@ def process(raw):
 
     if entry:
         cooked.append(entry)
-
     return cooked
 
+# Determines whether it is the current week or not
+def currWeek():
+    today = arrow.now()
+    today.format('MM/DD')
+    i = 0
+    # loop until we find what week we're in
+    while( i < len(weekBeginnings)):
+        beginning = arrow.get(weekBeginnings[i])
+	
+        endOfWeek = beginning.replace(days=7)
+        if(beginning <= today <= endOfWeek):
+            return (i + 1)
+        i+=1
+    return 0
 
 def main():
     f = open("data/schedule.txt")
